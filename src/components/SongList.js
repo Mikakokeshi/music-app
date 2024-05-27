@@ -15,7 +15,7 @@ export function SongList(props) {
 
           props.songs.map((song) => {
             return (
-              <div key={song.id} className="flex-none cursor-pointer ">
+              <div onClick={()=>props.onSongSelected(song)} key={song.id} className="flex-none cursor-pointer ">
                 <img
                   alt="thumbnail"
                   src={song.album.images[0].url}
