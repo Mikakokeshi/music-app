@@ -4,6 +4,9 @@ import { SongList } from "./components/SongList";
 import spotify from "./lib/spotify";
 import { Player } from "./components/Player";
 import { SearchInput } from "./components/SearchInput";
+import { Pagenation } from "./components/Pagenation";
+
+const limit = 20;
 
 export default function App() {
 
@@ -13,6 +16,9 @@ export default function App() {
   const [selectedSong, setSelectedSong] = useState();
   const [keyword, setKeyword] = useState("");
   const [searchedSongs, setSearchedSongs] = useState();
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const audioRef = useRef(null);
   const isSearchedResult = searchedSongs != null;
 
@@ -67,15 +73,32 @@ export default function App() {
     setKeyword(e.target.value);
   }
 
-  const searchSongs = async () => {
+  const searchSongs = async (page) => {
     setIsLoading(true);
-    const result =  await spotify.searchSongs(keyword);
+    const offset = parseInt(page) ? (parseInt(page) - 1) * limit : 0;
+    const result =  await spotify.searchSongs(keyword, limit, offset);
     setSearchedSongs(result.items)
-    console.log('result',result)
-    console.log('result items',result.items)
-    console.log('result items songs',result.items.songs)
+    setHasNext(result.next != null)
+    setHasPrev(result.previous != null)
+    console.log('result', result)
+    console.log('page', page)
+    console.log('limit', limit)
+    console.log('offset', offset)
+   
     setIsLoading(false);
   }
+
+  const moveToNext = async () => {
+    const nextPage = page + 1;
+    await searchSongs(nextPage);
+    setPage(nextPage);
+  };
+  
+  const moveToPrev = async () => {
+    const prevPage = page - 1;
+    await searchSongs(prevPage);
+    setPage(prevPage);
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-400 text-white">
@@ -88,6 +111,8 @@ export default function App() {
         <section>
           <h2 className="text-2xl font-semibold mb-5">{isSearchedResult? 'Searched result':'Popular Songs'}</h2>
           <SongList isLoading={isLoading} songs={isSearchedResult? searchedSongs : popularSongs} onSongSelected={handleSongsSelected}/>
+          {isSearchedResult && <Pagenation onNext={hasNext? moveToNext : null} onPrev={hasPrev? moveToPrev : null}/> }
+          
         </section>
       </main>
       {selectedSong != null &&  <Player song={selectedSong} isPlay={isPlay} onButtonClick = {toggleSong} />}
